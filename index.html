@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Fix & JSON Converter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#4F46E5",
+            "primary-dark": "#4338CA",
+            surface: "#1E1E1E",
+            "surface-dark": "#141414",
+          },
+        },
+      },
+    };
+  </script>
+</head>
+
+<body class="bg-surface text-gray-200 min-h-screen">
+  <main class="container mx-auto px-4 sm:px-6 py-8">
+    <header class="mb-8">
+      <h1
+        class="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">
+        Prompt Fix & JSON Converter
+      </h1>
+      <p class="text-gray-400 text-center mt-2 text-sm sm:text-base">
+        Fix your prompts & convert to structured JSON format
+      </p>
+    </header>
+
+    <div class="mb-6 bg-surface-dark rounded-xl p-4 sm:p-6 border border-gray-800">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm sm:text-base font-medium text-gray-300">
+          Gemini AI API Key
+        </h2>
+        <button id="toggleApiKey" class="text-xs sm:text-sm text-gray-400 hover:text-primary transition-colors">
+          Show
+        </button>
+      </div>
+      <div class="flex gap-2">
+        <input type="password" id="apiKey"
+          class="flex-1 p-2 rounded-lg bg-surface border border-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm"
+          placeholder="Enter your Gemini AI API key" />
+        <button id="saveApiKey"
+          class="bg-primary hover:bg-primary-dark transition-colors duration-200 py-2 px-4 rounded-lg font-semibold text-white text-sm">
+          Save
+        </button>
+        <button id="removeApiKey"
+          class="bg-red-600 hover:bg-red-700 transition-colors duration-200 py-2 px-4 rounded-lg font-semibold text-white text-sm">
+          Remove
+        </button>
+      </div>
+      <p class="mt-2 text-xs text-gray-500">
+        Your API key is stored securely in your browser's local storage.
+      </p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+      <section class="bg-surface-dark rounded-xl p-4 sm:p-6 border border-gray-800">
+        <form id="promptForm" class="space-y-4">
+          <div>
+            <label class="text-sm sm:text-base font-medium text-gray-300">Enter your prompt</label>
+            <div class="relative mt-2">
+              <textarea id="prompt" rows="8" placeholder="Type your raw prompt here..."
+                class="w-full p-3 sm:p-4 rounded-lg bg-surface border border-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm sm:text-base resize-none"></textarea>
+              <div class="absolute bottom-2 right-2 text-xs text-gray-500">
+                <span id="charCount">0</span>/4000
+              </div>
+            </div>
+          </div>
+
+          <button type="submit"
+            class="w-full bg-primary hover:bg-primary-dark transition-colors duration-200 py-3 px-4 rounded-lg font-semibold text-white text-sm sm:text-base flex items-center justify-center gap-2">
+            <span>FIX</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          <p class="text-center text-xs sm:text-sm text-gray-500">
+            Press Ctrl+Enter to generate quickly
+          </p>
+        </form>
+      </section>
+
+      <section class="space-y-6">
+        <div class="bg-surface-dark rounded-xl p-4 sm:p-6 border border-gray-800">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm sm:text-base font-medium text-gray-300">
+              Fixed Prompt
+            </h2>
+            <button onclick="copyOutput('fixedOutput')"
+              class="text-xs sm:text-sm text-gray-400 hover:text-primary transition-colors">
+              Copy
+            </button>
+          </div>
+          <div id="fixedOutput"
+            class="bg-surface p-3 sm:p-4 rounded-lg font-mono text-xs sm:text-sm border border-gray-800 whitespace-pre-wrap min-h-[120px] max-h-[240px] overflow-y-auto">
+          </div>
+        </div>
+
+        <div class="bg-surface-dark rounded-xl p-4 sm:p-6 border border-gray-800">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm sm:text-base font-medium text-gray-300">
+              JSON Prompt
+            </h2>
+            <button onclick="copyOutput('jsonOutput')"
+              class="text-xs sm:text-sm text-gray-400 hover:text-primary transition-colors">
+              Copy
+            </button>
+          </div>
+          <div id="jsonOutput"
+            class="bg-surface p-3 sm:p-4 rounded-lg font-mono text-xs sm:text-sm border border-gray-800 whitespace-pre-wrap min-h-[120px] max-h-[240px] overflow-y-auto">
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Character counter
+    const textarea = document.getElementById("prompt");
+    const charCount = document.getElementById("charCount");
+
+    textarea.addEventListener("input", function () {
+      const count = this.value.length;
+      charCount.textContent = count;
+      charCount.classList.toggle("text-red-500", count > 4000);
+    });
+
+    // Copy functionality
+    async function copyOutput(elementId) {
+      const element = document.getElementById(elementId);
+      const text = element.innerText;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        const button = element.parentElement.querySelector("button");
+        button.innerText = "Copied!";
+        setTimeout(() => (button.innerText = "Copy"), 2000);
+      } catch (err) {
+        console.error("Failed to copy:", err);
+      }
+    }
+
+    // API Key Management
+    const apiKeyInput = document.getElementById("apiKey");
+    const toggleApiKeyBtn = document.getElementById("toggleApiKey");
+    const saveApiKeyBtn = document.getElementById("saveApiKey");
+    const removeApiKeyBtn = document.getElementById("removeApiKey");
+
+    // Load API key from storage
+    apiKeyInput.value = localStorage.getItem("geminiApiKey") || "";
+
+    // Toggle API key visibility
+    toggleApiKeyBtn.addEventListener("click", () => {
+      if (apiKeyInput.type === "password") {
+        apiKeyInput.type = "text";
+        toggleApiKeyBtn.textContent = "Hide";
+      } else {
+        apiKeyInput.type = "password";
+        toggleApiKeyBtn.textContent = "Show";
+      }
+    });
+
+    // Save API key
+    saveApiKeyBtn.addEventListener("click", () => {
+      const apiKey = apiKeyInput.value.trim();
+      if (apiKey) {
+        localStorage.setItem("geminiApiKey", apiKey);
+        alert("API key saved successfully!");
+      } else {
+        alert("Please enter an API key");
+      }
+    });
+
+    // Remove API key
+    removeApiKeyBtn.addEventListener("click", () => {
+      localStorage.removeItem("geminiApiKey");
+      apiKeyInput.value = "";
+      alert("API key removed successfully!");
+    });
+
+    // Form handling
+    document
+      .getElementById("promptForm")
+      .addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const button = this.querySelector('button[type="submit"]');
+        const originalContent = button.innerHTML;
+        const apiKey = localStorage.getItem("geminiApiKey");
+
+        if (!apiKey) {
+          alert("Please enter and save your Gemini AI API key first");
+          return;
+        }
+
+        try {
+          button.innerHTML = `<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>`;
+          button.disabled = true;
+
+          // Direct API call to Gemini
+          const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+          // Alternative: Try gemini-1.5-pro if flash doesn't work
+          // const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+
+          const prompt = `
+Take the following user prompt: "${textarea.value}"
+
+1. Rewrite it into a clear, professional prompt easy for AI to understand.
+2. Convert it to structured JSON format that breaks down the prompt into key components.
+⚠️ Do NOT include markdown, backticks, or explanations.
+Format:
+{
+  "fixedPrompt": "<string>",
+  "jsonPrompt" : {
+    "key": "value",
+    ...
+  }
+}`;
+
+          const payload = {
+            contents: [{ parts: [{ text: prompt.trim() }] }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 10000,
+            },
+          };
+
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+              `API Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`
+            );
+          }
+
+          const result = await response.json();
+          let rawResponse =
+            result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+
+          if (!rawResponse) {
+            throw new Error("Empty response from the API");
+          }
+
+          // Try to extract JSON if it's wrapped in markdown code blocks
+          const jsonMatch = rawResponse.match(/```(?:json)?\n([\s\S]*?)\n```/);
+          const jsonString = jsonMatch ? jsonMatch[1] : rawResponse;
+
+          let fixedPrompt = "No fixed prompt returned.";
+          let jsonPrompt = {};
+
+          try {
+            const parsed = JSON.parse(jsonString);
+            fixedPrompt = parsed.fixedPrompt || fixedPrompt;
+            jsonPrompt = parsed.jsonPrompt || {};
+          } catch (e) {
+            console.error("Failed to parse JSON:", e);
+            throw new Error("Failed to parse AI response");
+          }
+
+          document.getElementById("fixedOutput").innerText = fixedPrompt;
+          document.getElementById("jsonOutput").innerText = JSON.stringify(
+            jsonPrompt,
+            null,
+            2
+          );
+        } catch (error) {
+          console.error("Error:", error);
+          document.getElementById("fixedOutput").innerText =
+            "Error occurred while processing";
+          document.getElementById("jsonOutput").innerText = `Error: ${error.message || "Failed to process request"
+            }`;
+        } finally {
+          button.innerHTML = originalContent;
+          button.disabled = false;
+        }
+      });
+
+    // Ctrl+Enter shortcut
+    textarea.addEventListener("keydown", function (e) {
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        document
+          .getElementById("promptForm")
+          .dispatchEvent(new Event("submit"));
+      }
+    });
+  </script>
+</body>
+
+</html>
