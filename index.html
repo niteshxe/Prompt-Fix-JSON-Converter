@@ -236,100 +236,99 @@
         </a>
       </div>
     </main>
+<script>
+    // Character counter
+    const textarea = document.getElementById("prompt");
+    const charCount = document.getElementById("charCount");
 
-    <script>
-      // Character counter
-      const textarea = document.getElementById("prompt");
-      const charCount = document.getElementById("charCount");
+    textarea.addEventListener("input", function () {
+      const count = this.value.length;
+      charCount.textContent = count;
+      charCount.classList.toggle("text-red-500", count > 4000);
+    });
 
-      textarea.addEventListener("input", function () {
-        const count = this.value.length;
-        charCount.textContent = count;
-        charCount.classList.toggle("text-red-500", count > 4000);
-      });
+    // Copy functionality
+    async function copyOutput(elementId) {
+      const element = document.getElementById(elementId);
+      const text = element.innerText;
 
-      // Copy functionality
-      async function copyOutput(elementId) {
-        const element = document.getElementById(elementId);
-        const text = element.innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+        const button = element.parentElement.querySelector("button");
+        button.innerText = "Copied!";
+        setTimeout(() => (button.innerText = "Copy"), 2000);
+      } catch (err) {
+        console.error("Failed to copy:", err);
+      }
+    }
+
+    // API Key Management
+    const apiKeyInput = document.getElementById("apiKey");
+    const toggleApiKeyBtn = document.getElementById("toggleApiKey");
+    const saveApiKeyBtn = document.getElementById("saveApiKey");
+    const removeApiKeyBtn = document.getElementById("removeApiKey");
+
+    // Load API key from storage
+    apiKeyInput.value = localStorage.getItem("geminiApiKey") || "";
+
+    // Toggle API key visibility
+    toggleApiKeyBtn.addEventListener("click", () => {
+      if (apiKeyInput.type === "password") {
+        apiKeyInput.type = "text";
+        toggleApiKeyBtn.textContent = "Hide";
+      } else {
+        apiKeyInput.type = "password";
+        toggleApiKeyBtn.textContent = "Show";
+      }
+    });
+
+    // Save API key
+    saveApiKeyBtn.addEventListener("click", () => {
+      const apiKey = apiKeyInput.value.trim();
+      if (apiKey) {
+        localStorage.setItem("geminiApiKey", apiKey);
+        alert("API key saved successfully!");
+      } else {
+        alert("Please enter an API key");
+      }
+    });
+
+    // Remove API key
+    removeApiKeyBtn.addEventListener("click", () => {
+      localStorage.removeItem("geminiApiKey");
+      apiKeyInput.value = "";
+      alert("API key removed successfully!");
+    });
+
+    // Form handling
+    document
+      .getElementById("promptForm")
+      .addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const button = this.querySelector('button[type="submit"]');
+        const originalContent = button.innerHTML;
+        const apiKey = localStorage.getItem("geminiApiKey");
+
+        if (!apiKey) {
+          alert("Please enter and save your Gemini AI API key first");
+          return;
+        }
 
         try {
-          await navigator.clipboard.writeText(text);
-          const button = element.parentElement.querySelector("button");
-          button.innerText = "Copied!";
-          setTimeout(() => (button.innerText = "Copy"), 2000);
-        } catch (err) {
-          console.error("Failed to copy:", err);
-        }
-      }
-
-      // API Key Management
-      const apiKeyInput = document.getElementById("apiKey");
-      const toggleApiKeyBtn = document.getElementById("toggleApiKey");
-      const saveApiKeyBtn = document.getElementById("saveApiKey");
-      const removeApiKeyBtn = document.getElementById("removeApiKey");
-
-      // Load API key from storage
-      apiKeyInput.value = localStorage.getItem("geminiApiKey") || "";
-
-      // Toggle API key visibility
-      toggleApiKeyBtn.addEventListener("click", () => {
-        if (apiKeyInput.type === "password") {
-          apiKeyInput.type = "text";
-          toggleApiKeyBtn.textContent = "Hide";
-        } else {
-          apiKeyInput.type = "password";
-          toggleApiKeyBtn.textContent = "Show";
-        }
-      });
-
-      // Save API key
-      saveApiKeyBtn.addEventListener("click", () => {
-        const apiKey = apiKeyInput.value.trim();
-        if (apiKey) {
-          localStorage.setItem("geminiApiKey", apiKey);
-          alert("API key saved successfully!");
-        } else {
-          alert("Please enter an API key");
-        }
-      });
-
-      // Remove API key
-      removeApiKeyBtn.addEventListener("click", () => {
-        localStorage.removeItem("geminiApiKey");
-        apiKeyInput.value = "";
-        alert("API key removed successfully!");
-      });
-
-      // Form handling
-      document
-        .getElementById("promptForm")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
-          const button = this.querySelector('button[type="submit"]');
-          const originalContent = button.innerHTML;
-          const apiKey = localStorage.getItem("geminiApiKey");
-
-          if (!apiKey) {
-            alert("Please enter and save your Gemini AI API key first");
-            return;
-          }
-
-          try {
-            button.innerHTML = `<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+          button.innerHTML = `<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                     </svg>`;
-            button.disabled = true;
+          button.disabled = true;
 
-            // Direct API call to Gemini
-            const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+          // DIRECT API CALL WITH THE CORRECTED MODEL NAME AND ENDPOINT
+          const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-            // Alternative: Try gemini-1.5-pro if flash doesn't work
-            // const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+          // Alternative: Try gemini-2.5-pro
+          // const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=${apiKey}`;
 
-            // Update the prompt template for better formatting
-            const prompt = `
+          // Update the prompt template for better formatting
+          const prompt = `
 Take the following user prompt: "${textarea.value}"
 
 1. Rewrite it into a clear, professional prompt easy for AI to understand.
@@ -346,107 +345,111 @@ Format:
   "MARKDOWNPrompt": "# Heading\ncontent"
 }`;
 
-            const payload = {
-              contents: [{ parts: [{ text: prompt.trim() }] }],
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 10000,
-              },
-            };
+          const payload = {
+            contents: [{ parts: [{ text: prompt.trim() }] }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 10000,
+            },
+          };
 
-            const response = await fetch(API_URL, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(payload),
-            });
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
 
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}));
-              throw new Error(
-                `API Error: ${response.status} - ${
-                  errorData.error?.message || "Unknown error"
-                }`
-              );
-            }
-
-            const result = await response.json();
-            let rawResponse =
-              result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-            if (!rawResponse) {
-              throw new Error(
-                "Empty or invalid response from the API. Please try again."
-              );
-            }
-
-            // Try to extract JSON if it's wrapped in markdown code blocks
-            const jsonMatch = rawResponse.match(
-              /```(?:json)?\n([\s\S]*?)\n```/
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+              `API Error: ${response.status} - ${
+                errorData.error?.message || "Unknown error"
+              }`
             );
-            const jsonString = jsonMatch ? jsonMatch[1] : rawResponse;
-
-            let fixedPrompt = "No fixed prompt returned.";
-            let jsonPrompt = {};
-            let xmlPrompt = "";
-            let yamlPrompt = "";
-            let markdownPrompt = "";
-
-            // Fix the parsing section
-            try {
-              const parsed = JSON.parse(jsonString);
-              fixedPrompt = parsed.fixedPrompt || "No fixed prompt returned.";
-              jsonPrompt = parsed.jsonPrompt || {};
-              xmlPrompt =
-                parsed.XMLPrompt ||
-                "<xml><error>No XML prompt returned.</error></xml>";
-              yamlPrompt =
-                parsed.YAMLPrompt || "error: No YAML prompt returned";
-              markdownPrompt =
-                parsed.MARKDOWNPrompt ||
-                "# Error\nNo Markdown prompt returned.";
-            } catch (e) {
-              console.error("Failed to parse JSON:", e);
-              throw new Error("Failed to parse AI response");
-            }
-
-            document.getElementById("fixedOutput").innerText = fixedPrompt;
-            document.getElementById("jsonOutput").innerText = JSON.stringify(
-              jsonPrompt,
-              null,
-              2
-            );
-
-            document.getElementById("XMLPrompt").innerText =
-              xmlPrompt || "No XML prompt returned.";
-
-            document.getElementById("yaml").innerText =
-              yamlPrompt || "No yaml prompt returned.";
-            document.getElementById("markdown").innerText =
-              markdownPrompt || "No markdown prompt returned.";
-          } catch (error) {
-            console.error("Error:", error);
-            document.getElementById("fixedOutput").innerText =
-              "Error occurred while processing";
-            document.getElementById("jsonOutput").innerText = `Error: ${
-              error.message || "Failed to process request"
-            }`;
-          } finally {
-            button.innerHTML = originalContent;
-            button.disabled = false;
           }
-        });
 
-      // Ctrl+Enter shortcut
-      textarea.addEventListener("keydown", function (e) {
-        if (e.ctrlKey && e.key === "Enter") {
-          e.preventDefault();
-          document
-            .getElementById("promptForm")
-            .dispatchEvent(new Event("submit"));
+          const result = await response.json();
+          let rawResponse =
+            result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+          if (!rawResponse) {
+            throw new Error(
+              "Empty or invalid response from the API. Please try again."
+            );
+          }
+
+          // Try to extract JSON if it's wrapped in markdown code blocks
+          const jsonMatch = rawResponse.match(
+            /```(?:json)?\n([\s\S]*?)\n```/
+          );
+          const jsonString = jsonMatch ? jsonMatch[1] : rawResponse;
+
+          let fixedPrompt = "No fixed prompt returned.";
+          let jsonPrompt = {};
+          let xmlPrompt = "";
+          let yamlPrompt = "";
+          let markdownPrompt = "";
+
+          // Fix the parsing section
+          try {
+            const parsed = JSON.parse(jsonString);
+            fixedPrompt = parsed.fixedPrompt || "No fixed prompt returned.";
+            jsonPrompt = parsed.jsonPrompt || {};
+            xmlPrompt =
+              parsed.XMLPrompt ||
+              "<xml><error>No XML prompt returned.</error></xml>";
+            yamlPrompt =
+              parsed.YAMLPrompt || "error: No YAML prompt returned";
+            markdownPrompt =
+              parsed.MARKDOWNPrompt ||
+              "# Error\nNo Markdown prompt returned.";
+          } catch (e) {
+            console.error("Failed to parse JSON:", e);
+            throw new Error("Failed to parse AI response");
+          }
+
+          document.getElementById("fixedOutput").innerText = fixedPrompt;
+          document.getElementById("jsonOutput").innerText = JSON.stringify(
+            jsonPrompt,
+            null,
+            2
+          );
+
+          document.getElementById("XMLPrompt").innerText =
+            xmlPrompt || "No XML prompt returned.";
+
+          document.getElementById("yaml").innerText =
+            yamlPrompt || "No yaml prompt returned.";
+          document.getElementById("markdown").innerText =
+            markdownPrompt || "No markdown prompt returned.";
+        } catch (error) {
+          console.error("Error:", error);
+          document.getElementById("fixedOutput").innerText =
+            "Error occurred while processing";
+          document.getElementById("jsonOutput").innerText = `Error: ${
+            error.message || "Failed to process request"
+          }`;
+        } finally {
+          button.innerHTML = originalContent;
+          button.disabled = false;
         }
       });
-    </script>
+
+    // Ctrl+Enter shortcut
+    textarea.addEventListener("keydown", function (e) {
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        document
+          .getElementById("promptForm")
+          .dispatchEvent(new Event("submit"));
+      }
+    });
+
+    // Make copyOutput function globally accessible
+    window.copyOutput = copyOutput;
+  </script>
   </body>
 </html>
+
